@@ -1,10 +1,17 @@
 import sys
+import os
 
 from django.conf import settings
+
+
 
 from wsgiref import simple_server
 simple_server.ServerHandler.http_version = "1.1"
 #Chrome may not send If-None-Match is when the response includes an "HTTP/1.0" instead of an "HTTP/1.1" status line. Some servers, such as Django's development server, send an older header (probably because they do not support keep-alive) and when they do so, ETags don't work in Chrome.
+
+
+
+BASE_DIR = os.path.dirname(__file__)
 
 settings.configure(
 	DEBUG=True,
@@ -15,6 +22,16 @@ settings.configure(
 		'django.middleware.csrf.CsrfViewMiddleware',
 		'django.middleware.clickjacking.XFrameOptionsMiddleware',
 	),
+	INSTALLED_APPS=(
+		'django.contrib.staticfiles',
+	),
+	TEMPLATE_DIRS=(
+		os.path.join(BASE_DIR, 'templates'),
+	),
+	STATICFILES_DIRS=(
+		os.path.join(BASE_DIR, 'static'),
+	),
+	STATIC_URL='/static/',
 )
 
 
@@ -23,6 +40,8 @@ from django.conf.urls import url
 from django.http import HttpResponse,HttpResponseBadRequest
 from django.core.cache import cache
 from django.views.decorators.http import etag
+from django.core.urlresolvers import reverse
+from django.shortcuts import render
 
 from io import BytesIO
 from PIL import Image, ImageDraw
@@ -58,7 +77,12 @@ def generate_etag(request, width, height):
 	return hashlib.sha1(content.encode('utf-8')).hexdigest()
 		
 def index(request):
-	return HttpResponse('Hello World')
+	#return HttpResponse('Hello World')
+	example = reverse('placeholder', kwargs={'width':50, 'height':50})
+	context = {
+		'example': request.build_absolute_uri(example)
+	}
+	return render(request, 'home.html', context)
 
 @etag(generate_etag)
 def placeholder(request, width, height):
